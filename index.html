@@ -28,7 +28,6 @@
             border-bottom: 3px solid var(--tito-orange);
         }
 
-        /* Contenedor de categorías deslizable */
         .cat-container { padding: 10px 0; gap: 10px; display: flex; overflow-x: auto; scrollbar-width: none; }
         .cat-container::-webkit-scrollbar { display: none; }
         
@@ -55,12 +54,21 @@
             position: absolute; top: 8px; right: 8px; font-weight: bold;
         }
 
+        /* Banner Total y Carrito */
         .total-banner { 
             position: fixed; bottom: 0; width: 100%;
-            background: rgba(255,255,255,0.95); backdrop-filter: blur(10px);
+            background: rgba(255,255,255,0.98); backdrop-filter: blur(10px);
             padding: 15px; border-radius: 25px 25px 0 0;
             box-shadow: 0 -5px 20px rgba(0,0,0,0.1); z-index: 1000;
         }
+
+        #listaCarritoFlotante {
+            display: none; position: fixed; bottom: 100px; left: 5%; right: 5%;
+            background: white; border-radius: 20px; box-shadow: 0 -10px 30px rgba(0,0,0,0.2);
+            z-index: 999; max-height: 60vh; overflow-y: auto; padding: 20px;
+        }
+
+        .item-control { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
 
         .admin-only { display: none !important; }
 
@@ -78,9 +86,9 @@
         <span class="navbar-brand fw-bold"><i class="fas fa-store-alt me-2 text-warning"></i>ALMACÉN TITO</span>
         <div class="d-flex gap-2">
             <div id="btnGroupAdmin" class="admin-only d-flex gap-1">
-                <button class="btn btn-warning btn-sm rounded-pill" data-bs-toggle="modal" data-bs-target="#modalCaja" title="Caja Diaria"><i class="fas fa-chart-line"></i></button>
-                <button class="btn btn-light btn-sm rounded-pill" onclick="abrirModalNuevo()" title="Nuevo Producto"><i class="fas fa-plus"></i></button>
-                <button class="btn btn-outline-danger btn-sm rounded-pill" onclick="cerrarSesion()" title="Salir"><i class="fas fa-power-off"></i></button>
+                <button class="btn btn-warning btn-sm rounded-pill" data-bs-toggle="modal" data-bs-target="#modalCaja"><i class="fas fa-chart-line"></i></button>
+                <button class="btn btn-light btn-sm rounded-pill" onclick="abrirModalNuevo()"><i class="fas fa-plus"></i></button>
+                <button class="btn btn-outline-danger btn-sm rounded-pill" onclick="cerrarSesion()"><i class="fas fa-power-off"></i></button>
             </div>
             <button id="btnLogin" class="btn btn-link text-white text-decoration-none" onclick="mostrarLogin()"><i class="fas fa-lock"></i></button>
         </div>
@@ -88,7 +96,7 @@
 </nav>
 
 <div class="container mt-2">
-    <!-- Categorías para Clientes -->
+    <!-- Categorías -->
     <div class="cat-container mb-3">
         <button class="cat-btn active" onclick="filtrarPorCategoria('Todas', this)">Todas</button>
         <button class="cat-btn" onclick="filtrarPorCategoria('Oferta', this)"><i class="fas fa-star text-warning"></i> Ofertas</button>
@@ -123,17 +131,27 @@
     </div>
 </div>
 
+<!-- Carrito Flotante (Edición) -->
+<div id="listaCarritoFlotante">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0">Modificar Pedido</h5>
+        <button class="btn-close" onclick="toggleCarrito()"></button>
+    </div>
+    <div id="itemsParaEditar"></div>
+</div>
+
+<!-- Banner de Pago Inferior -->
 <div class="total-banner">
     <div class="container d-flex justify-content-between align-items-center">
-        <div>
-            <div id="detalleCarrito" class="small text-muted" style="max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Bolsa vacía</div>
+        <div onclick="toggleCarrito()" style="cursor: pointer; flex-grow: 1;">
+            <div id="detalleCarrito" class="small text-muted text-decoration-underline">Ver/Editar pedido</div>
             <h2 class="mb-0 fw-bold" id="cartTotal">$0</h2>
         </div>
         <button class="btn btn-success btn-lg rounded-4 px-4 fw-bold shadow" onclick="prepararTicket()">LISTO</button>
     </div>
 </div>
 
-<!-- Modal de Ticket para el Cliente -->
+<!-- Modal de Ticket -->
 <div class="modal fade" id="modalTicket" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 rounded-5 p-4 shadow-lg text-center">
@@ -151,7 +169,7 @@
                     <button class="btn btn-outline-danger" onclick="finalizarVenta('Fiado')">A Fiado</button>
                 </div>
             </div>
-            <button class="btn btn-link text-muted mt-2" data-bs-dismiss="modal">Seguir comprando</button>
+            <button class="btn btn-link text-muted mt-2" data-bs-dismiss="modal">Volver</button>
         </div>
     </div>
 </div>
@@ -197,7 +215,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, set, onValue, push, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, set, onValue, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyBYI7qiPY56B_G3erqTbU4PxBGp-LpTli0",
@@ -256,20 +274,65 @@
         actualizarCarrito();
     };
 
+    window.toggleCarrito = () => {
+        const panel = document.getElementById('listaCarritoFlotante');
+        panel.style.display = (panel.style.display === 'block') ? 'none' : 'block';
+        if(panel.style.display === 'block') renderEditarCarrito();
+    };
+
+    function renderEditarCarrito() {
+        const contenedor = document.getElementById('itemsParaEditar');
+        if (carrito.length === 0) {
+            contenedor.innerHTML = "<p class='text-center text-muted'>La bolsa está vacía</p>";
+            return;
+        }
+        contenedor.innerHTML = carrito.map(item => `
+            <div class="item-control">
+                <div>
+                    <div class="fw-bold">${item.nombre}</div>
+                    <div class="text-success small">$${item.precio * item.cantidad}</div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-sm btn-outline-danger rounded-circle" onclick="modificarCantidad('${item.id}', -1)">-</button>
+                    <span class="fw-bold">${item.cantidad}</span>
+                    <button class="btn btn-sm btn-outline-success rounded-circle" onclick="modificarCantidad('${item.id}', 1)">+</button>
+                    <button class="btn btn-sm btn-light ms-2 text-danger" onclick="eliminarDelCarrito('${item.id}')"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    window.modificarCantidad = (id, cambio) => {
+        const item = carrito.find(i => i.id == id);
+        if (item) {
+            item.cantidad += cambio;
+            if (item.cantidad <= 0) { eliminarDelCarrito(id); }
+            else { actualizarCarrito(); renderEditarCarrito(); }
+        }
+    };
+
+    window.eliminarDelCarrito = (id) => {
+        carrito = carrito.filter(i => i.id != id);
+        actualizarCarrito();
+        renderEditarCarrito();
+        if(carrito.length === 0) document.getElementById('listaCarritoFlotante').style.display = 'none';
+    };
+
     function actualizarCarrito() {
         const total = carrito.reduce((a,b)=>a+(b.precio*b.cantidad),0);
         document.getElementById('cartTotal').innerText = `$${total.toLocaleString()}`;
-        document.getElementById('detalleCarrito').innerText = carrito.length > 0 ? carrito.map(i=>`${i.cantidad}x ${i.nombre}`).join(', ') : 'Bolsa vacía';
+        document.getElementById('detalleCarrito').innerText = carrito.length > 0 ? "Ver/Editar pedido" : "Bolsa vacía";
     }
 
     window.prepararTicket = () => {
+        document.getElementById('listaCarritoFlotante').style.display = 'none';
         if(carrito.length === 0) return;
         document.getElementById('resumenModal').innerHTML = carrito.map(i => `<div>${i.cantidad}x ${i.nombre} - $${i.precio*i.cantidad}</div>`).join('');
         new bootstrap.Modal(document.getElementById('modalTicket')).show();
     };
 
     window.imprimirPedido = () => {
-        document.getElementById('itemsTicket').innerHTML = carrito.map(i => `<div style="display:flex; justify-content:space-between;"><span>${i.cantidad}x ${i.nombre.substring(0,15)}</span><span>$${i.precio*i.cantidad}</span></div>`).join('');
+        document.getElementById('itemsTicket').innerHTML = carrito.map(i => `<div style="display:flex; justify-content:space-between;"><span>${i.cantidad}x ${i.nombre.substring(0,18)}</span><span>$${i.precio*i.cantidad}</span></div>`).join('');
         document.getElementById('totalTicket').innerText = `TOTAL: ${document.getElementById('cartTotal').innerText}`;
         document.getElementById('fechaTicket').innerText = new Date().toLocaleString();
         window.print();
@@ -308,7 +371,7 @@
 
         if(isAdmin) {
             document.getElementById('listaStock').innerHTML = productos.map(p => `
-                <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div class="list-group-item d-flex justify-content-between align-items-center bg-white mb-1 border-0 shadow-sm rounded-3">
                     <span><b>${p.nombre}</b> ($${p.precio})</span>
                     <button class="btn btn-sm btn-primary" onclick="editarProd(${p.id})">Editar</button>
                 </div>`).join('');

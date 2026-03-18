@@ -3,39 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ALMACEN TITO | Punto de Venta</title>
-    <link rel="manifest" href="manifest.json">
+    <title>ALMACEN TITO | Sincronizado</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --tito-green: #2e7d32; --tito-orange: #f57c00; --tito-dark: #1a1a1a; --bg-light: #f0f2f5; }
-        body { background-color: var(--bg-light); font-family: 'Segoe UI', sans-serif; padding-bottom: 130px; }
+        :root { --tito-green: #2e7d32; --tito-dark: #1a1a1a; --bg-light: #f0f2f5; }
+        body { background-color: var(--bg-light); font-family: 'Segoe UI', sans-serif; padding-bottom: 140px; }
         .navbar { background-color: var(--tito-green) !important; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
         .card { border: none; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 12px; }
-        
-        .cat-btn { border: none; background: white; border-radius: 12px; padding: 10px; min-width: 80px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: 0.2s; font-size: 0.8rem; font-weight: bold; color: #555; }
+        .cat-btn { border: none; background: white; border-radius: 12px; padding: 10px; min-width: 75px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: 0.2s; font-size: 0.75rem; font-weight: bold; }
         .cat-btn.active { background: var(--tito-green); color: white; transform: scale(1.05); }
-        .cat-btn i { font-size: 1.2rem; display: block; margin-bottom: 5px; }
-
-        .product-item { cursor: pointer; border-left: 6px solid var(--tito-green); background: white; transition: 0.2s; }
+        .cat-btn i { font-size: 1.1rem; display: block; margin-bottom: 3px; }
+        .product-item { cursor: pointer; border-left: 6px solid var(--tito-green); transition: 0.2s; background: white; }
         .product-item:active { transform: scale(0.95); background: #e8f5e9; }
-        .out-of-stock { border-left-color: #d32f2f; opacity: 0.5; pointer-events: none; }
-        
-        #detalleCarrito { max-height: 150px; overflow-y: auto; background: white; border-radius: 10px; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; }
+        .out-of-stock { border-left-color: #d32f2f !important; opacity: 0.5; pointer-events: none; }
+        #detalleCarrito { max-height: 150px; overflow-y: auto; background: white; border-radius: 10px; padding: 10px; border: 1px solid #ddd; }
         .item-carrito { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding: 5px 0; }
-        
         .total-banner { position: fixed; bottom: 0; left: 0; right: 0; background: var(--tito-dark); color: white; padding: 15px; z-index: 1000; border-radius: 20px 20px 0 0; }
-        .fiado-card { border-left: 6px solid #d32f2f; }
+        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 9999; display: flex; justify-content: center; align-items: center; }
+        .admin-badge { font-size: 0.7rem; background: #fff3e0; color: #ef6c00; padding: 2px 8px; border-radius: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
+
+<div id="loader" class="loading-overlay">
+    <div class="text-center"><div class="spinner-border text-success"></div><br><b>Conectando con la nube...</b></div>
+</div>
 
 <nav class="navbar navbar-dark sticky-top p-3">
     <div class="container-fluid">
         <span class="navbar-brand h1 fw-bold mb-0"><i class="fas fa-store me-2"></i>ALMACEN TITO</span>
         <div>
             <button class="btn btn-warning btn-sm fw-bold me-1" data-bs-toggle="modal" data-bs-target="#modalCaja"><i class="fas fa-cash-register"></i> CAJA</button>
-            <button class="btn btn-light btn-sm fw-bold" onclick="validarAcceso(prepararNuevoProd)"><i class="fas fa-plus"></i> STOCK</button>
+            <button class="btn btn-light btn-sm fw-bold" onclick="validarAcceso(abrirModalNuevo)"><i class="fas fa-plus"></i> STOCK</button>
         </div>
     </div>
 </nav>
@@ -56,16 +56,20 @@
                 <button class="cat-btn" onclick="filtrarPorCategoria('Verduleria', this)"><i class="fas fa-leaf"></i>Verdura</button>
                 <button class="cat-btn" onclick="filtrarPorCategoria('Polleria', this)"><i class="fas fa-drumstick-bite"></i>Pollo</button>
             </div>
-            <input type="text" id="searchVenta" class="form-control mb-3 shadow-sm" placeholder="Buscar nombre..." onkeyup="filterVentas()">
+            <input type="text" id="searchVenta" class="form-control mb-3 shadow-sm" placeholder="Buscar producto..." onkeyup="filterVentas()">
             <div id="listaVentas" class="row g-2 mb-4"></div>
-            <h6 class="fw-bold small"><i class="fas fa-shopping-basket me-2"></i>TICKET:</h6>
+            <h6 class="fw-bold small">TICKET ACTUAL:</h6>
             <div id="detalleCarrito" class="shadow-sm small"><div class="text-muted text-center">Vacío</div></div>
         </div>
 
         <div class="tab-pane fade" id="tab-stock">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <input type="text" id="searchStock" class="form-control me-2" placeholder="Buscar en stock..." onkeyup="filterStock()">
+                <button id="btnLock" class="btn btn-outline-secondary btn-sm" onclick="cerrarSesion()" style="display:none;"><i class="fas fa-lock"></i></button>
+            </div>
             <div id="listaStock"></div>
         </div>
-
+        
         <div class="tab-pane fade" id="tab-fiados">
             <button class="btn btn-danger w-100 mb-3 py-2 fw-bold" data-bs-toggle="modal" data-bs-target="#modalFiado">NUEVA DEUDA</button>
             <div id="listaFiados"></div>
@@ -80,125 +84,226 @@
     </div>
 </div>
 
-<!-- MODAL CAJA -->
 <div class="modal fade" id="modalCaja" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0">
         <div class="modal-header bg-warning"><h5 class="modal-title fw-bold">Caja Diaria</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
         <div class="modal-body p-4 text-center">
             <div id="resumenCajaContent"></div><hr>
-            <button class="btn btn-danger w-100 mb-2" onclick="validarAcceso(limpiarCaja)">REINICIAR DÍA</button>
+            <button class="btn btn-danger w-100" onclick="validarAcceso(limpiarCaja)">REINICIAR DÍA</button>
         </div>
     </div></div>
 </div>
 
-<!-- MODAL PRODUCTO -->
-<div class="modal fade" id="modalProducto" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-body p-4">
-        <input type="hidden" id="prodId">
-        <label class="small fw-bold text-muted">NOMBRE</label><input type="text" id="prodNombre" class="form-control mb-2">
-        <label class="small fw-bold text-muted">PRECIO</label><input type="number" id="prodPrecio" class="form-control mb-2">
-        <label class="small fw-bold text-muted">CATEGORIA</label>
-        <select id="prodCat" class="form-select mb-2">
-            <option value="Almacen">Almacén</option>
-            <option value="Bebidas">Bebidas</option>
-            <option value="Verduleria">Verdulería</option>
-            <option value="Polleria">Pollería</option>
-        </select>
-        <label class="small fw-bold text-muted">STOCK</label>
-        <select id="prodEstado" class="form-select mb-3"><option value="true">DISPONIBLE</option><option value="false">AGOTADO</option></select>
-        <button class="btn btn-success w-100 fw-bold" onclick="guardarProducto()">GUARDAR PRODUCTO</button>
-    </div></div></div>
-</div>
+<div class="modal fade" id="modalProducto" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-body p-4">
+    <input type="hidden" id="prodId">
+    <label class="small fw-bold">NOMBRE</label><input type="text" id="prodNombre" class="form-control mb-2">
+    <label class="small fw-bold">PRECIO</label><input type="number" id="prodPrecio" class="form-control mb-2">
+    <label class="small fw-bold">CATEGORIA</label>
+    <select id="prodCat" class="form-select mb-2">
+        <option value="Almacen">Almacén</option>
+        <option value="Bebidas">Bebidas</option>
+        <option value="Verduleria">Verdulería</option>
+        <option value="Polleria">Pollería</option>
+    </select>
+    <label class="small fw-bold">STOCK</label>
+    <select id="prodEstado" class="form-select mb-3"><option value="true">SÍ HAY</option><option value="false">AGOTADO</option></select>
+    <button class="btn btn-success w-100 fw-bold" onclick="guardarProducto()">GUARDAR</button>
+</div></div></div></div>
 
-<!-- OTROS MODALES (Sin cambios) -->
-<div class="modal fade" id="modalCobro" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 text-center p-4"><h2 class="fw-bold mb-4" id="cobroMonto"></h2><button class="btn btn-outline-primary mb-2 py-3 fw-bold" onclick="finalizarVenta('Efectivo')">EFECTIVO</button><button class="btn btn-outline-info py-3 fw-bold" onclick="finalizarVenta('Transferencia')">TRANSFERENCIA</button></div></div></div>
-<div class="modal fade" id="modalFiado" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content p-4 border-0"><h5 class="fw-bold">Nuevo Fiado</h5><input type="text" id="fiadoCliente" class="form-control mb-2" placeholder="Cliente"><input type="number" id="fiadoMonto" class="form-control mb-2" placeholder="Monto $"><textarea id="fiadoNota" class="form-control mb-3" placeholder="Detalle"></textarea><button class="btn btn-danger w-100 fw-bold" onclick="guardarFiado()">ANOTAR</button></div></div></div>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, set, onValue, push, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyBYI7qiPY56B_G3erqTbU4PxBGp-LpTli0",
+        authDomain: "almacen-tito.firebaseapp.com",
+        projectId: "almacen-tito",
+        storageBucket: "almacen-tito.firebasestorage.app",
+        messagingSenderId: "426405919048",
+        appId: "1:426405919048:web:3f494f9de3453b72829b7d"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
     const CLAVE_MAESTRA = "Pimienta";
-    let productos = JSON.parse(localStorage.getItem('tito_stock')) || [];
-    let fiados = JSON.parse(localStorage.getItem('tito_fiados')) || [];
-    let ventasDia = JSON.parse(localStorage.getItem('tito_ventas_dia')) || [];
+    
+    // VARIABLE DE SESIÓN: Falsa al inicio
+    let isAdmin = false;
+
+    let productos = [];
+    let fiados = [];
+    let ventasDia = [];
     let carrito = [];
     let categoriaActual = 'Todas';
 
-    // FUNCIÓN DE SEGURIDAD
-    function validarAcceso(callback, id = null) {
-        const pass = prompt("Ingrese código de autorización:");
+    onValue(ref(db, 'productos'), (snapshot) => {
+        const data = snapshot.val();
+        productos = data ? Object.values(data) : [];
+        renderAll();
+        document.getElementById('loader').style.display = 'none';
+    });
+
+    onValue(ref(db, 'ventas'), (snapshot) => {
+        const data = snapshot.val();
+        ventasDia = data ? Object.values(data) : [];
+    });
+
+    onValue(ref(db, 'fiados'), (snapshot) => {
+        const data = snapshot.val();
+        fiados = data ? Object.values(data) : [];
+        renderAll();
+    });
+
+    // VALIDACIÓN INTELIGENTE
+    window.validarAcceso = (callback, id = null) => {
+        if (isAdmin) {
+            // Si ya puso la clave antes, entra directo
+            id ? callback(id) : callback();
+            return;
+        }
+
+        const pass = prompt("Ingrese código de administrador:");
         if (pass === CLAVE_MAESTRA) {
+            isAdmin = true; // ACTIVAR SESIÓN
+            document.getElementById('btnLock').style.display = 'block';
             id ? callback(id) : callback();
         } else {
-            alert("Código incorrecto. No tienes permiso.");
+            alert("Código incorrecto.");
         }
-    }
+    };
 
-    function prepararNuevoProd() { 
-        document.getElementById('prodId').value = ''; 
-        document.getElementById('prodNombre').value = ''; 
-        document.getElementById('prodPrecio').value = ''; 
+    window.cerrarSesion = () => {
+        isAdmin = false;
+        document.getElementById('btnLock').style.display = 'none';
+        alert("Sesión de administrador cerrada.");
+    };
+
+    window.abrirModalNuevo = () => {
+        document.getElementById('prodId').value = '';
+        document.getElementById('prodNombre').value = '';
+        document.getElementById('prodPrecio').value = '';
         new bootstrap.Modal(document.getElementById('modalProducto')).show();
-    }
+    };
 
-    function guardarProducto() {
-        const id = document.getElementById('prodId').value;
-        const p = { 
-            id: id ? parseInt(id) : Date.now(), 
-            nombre: document.getElementById('prodNombre').value, 
-            precio: parseFloat(document.getElementById('prodPrecio').value) || 0, 
+    window.guardarProducto = () => {
+        const id = document.getElementById('prodId').value || Date.now();
+        const p = {
+            id: id.toString(),
+            nombre: document.getElementById('prodNombre').value,
+            precio: parseFloat(document.getElementById('prodPrecio').value) || 0,
             categoria: document.getElementById('prodCat').value,
-            stock: document.getElementById('prodEstado').value === "true" 
+            stock: document.getElementById('prodEstado').value === "true"
         };
-        if(id) { productos[productos.findIndex(x => x.id == id)] = p; } else { productos.push(p); }
-        localStorage.setItem('tito_stock', JSON.stringify(productos));
-        renderAll(); bootstrap.Modal.getInstance(document.getElementById('modalProducto')).hide();
-    }
+        set(ref(db, 'productos/' + id), p);
+        bootstrap.Modal.getInstance(document.getElementById('modalProducto')).hide();
+        // Mantiene el modal abierto para seguir cargando si es nuevo
+        if (!document.getElementById('prodId').value) {
+             setTimeout(() => { if(confirm("¿Cargar otro producto?")) abrirModalNuevo(); }, 500);
+        }
+    };
 
-    // --- Lógica de Carrito y Ventas ---
-    function agregarAlCarrito(id) {
+    window.eliminarProd = (id) => {
+        if(confirm('¿Seguro quieres eliminar este producto?')) {
+            remove(ref(db, 'productos/' + id));
+        }
+    };
+
+    window.editarProd = (id) => {
         const p = productos.find(x => x.id == id);
-        const index = carrito.findIndex(item => item.id === id);
+        document.getElementById('prodId').value = p.id;
+        document.getElementById('prodNombre').value = p.nombre;
+        document.getElementById('prodPrecio').value = p.precio;
+        document.getElementById('prodCat').value = p.categoria;
+        document.getElementById('prodEstado').value = p.stock.toString();
+        new bootstrap.Modal(document.getElementById('modalProducto')).show();
+    };
+
+    window.agregarAlCarrito = (id) => {
+        const p = productos.find(x => x.id == id);
+        const index = carrito.findIndex(item => item.id == id);
         if (index > -1) { carrito[index].cantidad += 1; } 
         else { carrito.push({ ...p, cantidad: 1 }); }
         actualizarCarritoUI();
-    }
+    };
 
-    function quitarDelCarrito(id) {
-        const index = carrito.findIndex(item => item.id === id);
+    window.quitarDelCarrito = (id) => {
+        const index = carrito.findIndex(item => item.id == id);
         if (index > -1) {
             if (carrito[index].cantidad > 1) { carrito[index].cantidad -= 1; } 
             else { carrito.splice(index, 1); }
         }
         actualizarCarritoUI();
-    }
+    };
 
     function actualizarCarritoUI() {
         const detalle = document.getElementById('detalleCarrito');
-        if (carrito.length === 0) { detalle.innerHTML = '<div class="text-muted text-center">Vacío</div>'; document.getElementById('cartTotal').innerText = "$0"; return; }
+        if (carrito.length === 0) { 
+            detalle.innerHTML = '<div class="text-muted text-center">Vacío</div>'; 
+            document.getElementById('cartTotal').innerText = "$0"; 
+            return; 
+        }
         let html = ''; let total = 0;
         carrito.forEach(item => {
-            const subtotal = item.precio * item.cantidad; total += subtotal;
-            html += `<div class="item-carrito"><span><b>${item.cantidad}x</b> ${item.nombre}</span><span>$${subtotal.toLocaleString()}<button class="btn btn-sm text-danger ms-2" onclick="quitarDelCarrito(${item.id})"><i class="fas fa-trash"></i></button></span></div>`;
+            const subtotal = item.precio * item.cantidad;
+            total += subtotal;
+            html += `<div class="item-carrito"><span><b>${item.cantidad}x</b> ${item.nombre}</span><span>$${subtotal}<button class="btn btn-sm text-danger ms-2" onclick="quitarDelCarrito(${item.id})"><i class="fas fa-trash"></i></button></span></div>`;
         });
         detalle.innerHTML = html;
         document.getElementById('cartTotal').innerText = `$${total.toLocaleString()}`;
     }
 
-    function filtrarPorCategoria(cat, btn) {
+    window.filtrarPorCategoria = (cat, btn) => {
         categoriaActual = cat;
         document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         renderVentas();
-    }
+    };
+
+    window.prepararCobro = () => {
+        if(carrito.length === 0) return;
+        const total = carrito.reduce((acc, p) => acc + (p.precio * p.cantidad), 0);
+        document.getElementById('cobroMonto').innerText = `Total: $${total.toLocaleString()}`;
+        new bootstrap.Modal(document.getElementById('modalCobro')).show();
+    };
+
+    window.finalizarVenta = (metodo) => {
+        const total = carrito.reduce((acc, p) => acc + (p.precio * p.cantidad), 0);
+        const hoy = new Date().toLocaleDateString();
+        push(ref(db, 'ventas'), { monto: total, metodo: metodo, fecha: hoy });
+        carrito = [];
+        actualizarCarritoUI();
+        bootstrap.Modal.getInstance(document.getElementById('modalCobro')).hide();
+    };
+
+    window.limpiarCaja = () => {
+        remove(ref(db, 'ventas'));
+        alert("Caja reiniciada!");
+        bootstrap.Modal.getInstance(document.getElementById('modalCaja')).hide();
+    };
+
+    window.guardarFiado = () => {
+        const id = Date.now();
+        set(ref(db, 'fiados/' + id), {
+            id: id,
+            cliente: document.getElementById('fiadoCliente').value,
+            monto: document.getElementById('fiadoMonto').value,
+            nota: document.getElementById('fiadoNota').value
+        });
+        bootstrap.Modal.getInstance(document.getElementById('modalFiado')).hide();
+        document.getElementById('fiadoCliente').value = '';
+        document.getElementById('fiadoMonto').value = '';
+    };
+
+    window.borrarFiado = (id) => { if(confirm('¿Pagó?')) remove(ref(db, 'fiados/' + id)); };
 
     function renderVentas() {
         let filtrados = categoriaActual === 'Todas' ? productos : productos.filter(p => p.categoria === categoriaActual);
         document.getElementById('listaVentas').innerHTML = filtrados.map(p => `
             <div class="col-6 p-1">
                 <div class="card p-3 product-item ${!p.stock?'out-of-stock':''}" onclick="agregarAlCarrito(${p.id})">
-                    <small class="text-truncate d-block fw-bold" style="color:#888; font-size:0.6rem">${p.categoria.toUpperCase()}</small>
-                    <small class="text-truncate d-block">${p.nombre}</small>
-                    <h5 class="fw-bold mb-0">$${p.precio}</h5>
+                    <small style="font-size:0.6rem; color:gray; display:block">${p.categoria.toUpperCase()}</small>
+                    <div class="text-truncate fw-bold" style="font-size:0.85rem">${p.nombre}</div>
+                    <h5 class="fw-bold mb-0 text-success">$${p.precio}</h5>
                 </div>
             </div>`).join('');
     }
@@ -207,56 +312,52 @@
         renderVentas();
         document.getElementById('listaStock').innerHTML = productos.sort((a,b)=>a.nombre.localeCompare(b.nombre)).map(p => `
             <div class="card p-3 d-flex flex-row justify-content-between align-items-center">
-                <div><b>${p.nombre}</b> <small class="text-muted">(${p.categoria})</small><br><span class="text-success">$${p.precio}</span></div>
-                <div>
-                    <button class="btn btn-sm btn-outline-primary me-1" onclick="validarAcceso(editarProd, ${p.id})">Editar</button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="validarAcceso(eliminarProd, ${p.id})">X</button>
+                <div class="text-truncate" style="max-width:65%;"><b>${p.nombre}</b> <small class="text-muted d-block">${p.categoria}</small><span class="text-success fw-bold">$${p.precio}</span></div>
+                <div class="d-flex">
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="validarAcceso(editarProd, ${p.id})"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="validarAcceso(eliminarProd, ${p.id})"><i class="fas fa-trash"></i></button>
                 </div>
             </div>`).join('');
-        document.getElementById('listaFiados').innerHTML = fiados.map(f => `<div class="card p-3 fiado-card"><div class="d-flex justify-content-between"><b>${f.cliente}</b><b class="text-danger">$${f.monto}</b></div><small>${f.nota}</small><button class="btn btn-sm btn-success mt-2" onclick="borrarFiado(${f.id})">PAGÓ</button></div>`).join('');
+        
+        document.getElementById('listaFiados').innerHTML = fiados.map(f => `
+            <div class="card p-3 border-start border-danger border-4">
+                <div class="d-flex justify-content-between"><b>${f.cliente}</b><b class="text-danger">$${f.monto}</b></div>
+                <small>${f.nota}</small>
+                <button class="btn btn-sm btn-success mt-2" onclick="borrarFiado(${f.id})">PAGÓ</button>
+            </div>`).join('');
     }
 
-    function editarProd(id) { 
-        const p = productos.find(x => x.id == id); 
-        document.getElementById('prodId').value = p.id; 
-        document.getElementById('prodNombre').value = p.nombre; 
-        document.getElementById('prodPrecio').value = p.precio; 
-        document.getElementById('prodCat').value = p.categoria; 
-        document.getElementById('prodEstado').value = p.stock.toString(); 
-        new bootstrap.Modal(document.getElementById('modalProducto')).show(); 
-    }
+    window.filterVentas = () => {
+        let f = document.getElementById('searchVenta').value.toUpperCase();
+        let items = document.getElementById('listaVentas').getElementsByClassName('col-6');
+        for (let i = 0; i < items.length; i++) {
+            items[i].style.display = items[i].innerText.toUpperCase().indexOf(f) > -1 ? "" : "none";
+        }
+    };
 
-    function eliminarProd(id) { if(confirm('¿Seguro quieres borrar este producto del stock?')) { productos = productos.filter(x => x.id != id); localStorage.setItem('tito_stock', JSON.stringify(productos)); renderAll(); } }
-
-    function finalizarVenta(m) { 
-        const total = carrito.reduce((acc, p) => acc + (p.precio * p.cantidad), 0);
-        ventasDia.push({ monto: total, metodo: m, fecha: new Date().toLocaleDateString() });
-        localStorage.setItem('tito_ventas_dia', JSON.stringify(ventasDia));
-        carrito = []; actualizarCarritoUI(); bootstrap.Modal.getInstance(document.getElementById('modalCobro')).hide(); alert("Venta registrada");
-    }
+    window.filterStock = () => {
+        let f = document.getElementById('searchStock').value.toUpperCase();
+        let items = document.getElementById('listaStock').getElementsByClassName('card');
+        for (let i = 0; i < items.length; i++) {
+            items[i].style.display = items[i].innerText.toUpperCase().indexOf(f) > -1 ? "" : "none";
+        }
+    };
 
     document.getElementById('modalCaja').addEventListener('show.bs.modal', function () {
         const hoy = new Date().toLocaleDateString();
         const deHoy = ventasDia.filter(v => v.fecha === hoy);
         const efec = deHoy.filter(v => v.metodo === 'Efectivo').reduce((acc, v) => acc + v.monto, 0);
         const trans = deHoy.filter(v => v.metodo === 'Transferencia').reduce((acc, v) => acc + v.monto, 0);
-        document.getElementById('resumenCajaContent').innerHTML = `<h5 class="mb-3">${hoy}</h5><div class="d-flex justify-content-between mb-2"><span>Efectivo:</span> <b>$${efec.toLocaleString()}</b></div><div class="d-flex justify-content-between mb-2"><span>Transf:</span> <b>$${trans.toLocaleString()}</b></div><hr><div class="h4">TOTAL: $${(efec+trans).toLocaleString()}</div>`;
+        document.getElementById('resumenCajaContent').innerHTML = `
+            <h5 class="mb-3">${hoy}</h5>
+            <div class="d-flex justify-content-between"><span>Efectivo:</span> <b>$${efec.toLocaleString()}</b></div>
+            <div class="d-flex justify-content-between"><span>Transferencia:</span> <b>$${trans.toLocaleString()}</b></div>
+            <hr>
+            <div class="h4 fw-bold">TOTAL: $${(efec+trans).toLocaleString()}</div>
+        `;
     });
 
-    function limpiarCaja() { 
-        ventasDia = []; 
-        localStorage.setItem('tito_ventas_dia', JSON.stringify(ventasDia)); 
-        alert("Caja reiniciada con éxito.");
-        renderAll(); 
-        bootstrap.Modal.getInstance(document.getElementById('modalCaja')).hide(); 
-    }
-
-    function prepararCobro() { if(carrito.length === 0) return; document.getElementById('cobroMonto').innerText = `Total: $${carrito.reduce((acc, p) => acc + (p.precio * p.cantidad), 0).toLocaleString()}`; new bootstrap.Modal(document.getElementById('modalCobro')).show(); }
-    function guardarFiado() { fiados.push({ id: Date.now(), cliente: document.getElementById('fiadoCliente').value, monto: document.getElementById('fiadoMonto').value, nota: document.getElementById('fiadoNota').value, fecha: new Date().toLocaleDateString() }); localStorage.setItem('tito_fiados', JSON.stringify(fiados)); renderAll(); bootstrap.Modal.getInstance(document.getElementById('modalFiado')).hide(); }
-    function borrarFiado(id) { if(confirm('¿Pagó?')) { fiados = fiados.filter(x => x.id != id); localStorage.setItem('tito_fiados', JSON.stringify(fiados)); renderAll(); } }
-    function filterVentas() { let f = document.getElementById('searchVenta').value.toUpperCase(); let items = document.getElementById('listaVentas').getElementsByClassName('col-6'); for (let i = 0; i < items.length; i++) { items[i].style.display = items[i].innerText.toUpperCase().indexOf(f) > -1 ? "" : "none"; } }
-    
-    renderAll();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

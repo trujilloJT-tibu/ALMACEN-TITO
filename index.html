@@ -3,108 +3,196 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ALMACEN TITO | Sincronizado</title>
+    <title>ALMACÉN TITO | Gestión Profesional</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --tito-green: #2e7d32; --tito-dark: #1a1a1a; --bg-light: #f0f2f5; }
-        body { background-color: var(--bg-light); font-family: 'Segoe UI', sans-serif; padding-bottom: 140px; }
-        .navbar { background-color: var(--tito-green) !important; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-        .card { border: none; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 12px; }
-        .cat-btn { border: none; background: white; border-radius: 12px; padding: 10px; min-width: 75px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: 0.2s; font-size: 0.75rem; font-weight: bold; }
-        .cat-btn.active { background: var(--tito-green); color: white; transform: scale(1.05); }
-        .cat-btn i { font-size: 1.1rem; display: block; margin-bottom: 3px; }
-        .product-item { cursor: pointer; border-left: 6px solid var(--tito-green); transition: 0.2s; background: white; }
-        .product-item:active { transform: scale(0.95); background: #e8f5e9; }
-        .out-of-stock { border-left-color: #d32f2f !important; opacity: 0.5; pointer-events: none; }
-        #detalleCarrito { max-height: 150px; overflow-y: auto; background: white; border-radius: 10px; padding: 10px; border: 1px solid #ddd; }
-        .item-carrito { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding: 5px 0; }
-        .total-banner { position: fixed; bottom: 0; left: 0; right: 0; background: var(--tito-dark); color: white; padding: 15px; z-index: 1000; border-radius: 20px 20px 0 0; }
-        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 9999; display: flex; justify-content: center; align-items: center; }
+        :root { 
+            --tito-dark: #1a1a1a;
+            --tito-green: #1b5e20; 
+            --tito-accent: #2e7d32;
+            --tito-orange: #ff9100;
+            --bg-body: #f0f2f5; 
+        }
+        
+        body { 
+            background-color: var(--bg-body); 
+            font-family: 'Inter', sans-serif; 
+            padding-bottom: 160px; 
+            color: var(--tito-dark);
+        }
+
+        .navbar { 
+            background: linear-gradient(135deg, var(--tito-dark) 0%, #333 100%) !important;
+            border-bottom: 3px solid var(--tito-orange);
+        }
+
+        /* Contenedor de categorías deslizable */
+        .cat-container { padding: 10px 0; gap: 10px; display: flex; overflow-x: auto; scrollbar-width: none; }
+        .cat-container::-webkit-scrollbar { display: none; }
+        
+        .cat-btn { 
+            border: none; background: white; border-radius: 50px; 
+            padding: 8px 18px; font-size: 0.8rem; font-weight: 600;
+            transition: 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            white-space: nowrap; color: #555;
+        }
+        .cat-btn.active { background: var(--tito-orange); color: white; transform: translateY(-2px); }
+
+        .card-product {
+            border: none; border-radius: 15px; overflow: hidden;
+            transition: 0.2s; background: white; height: 100%;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05); position: relative;
+        }
+        .card-product:active { transform: scale(0.95); }
+        .price-tag { font-size: 1.1rem; font-weight: 800; color: var(--tito-green); }
+        
+        .cat-oferta { border: 2px solid var(--tito-orange) !important; background: #fffcf5; }
+        .badge-oferta { 
+            background: var(--tito-orange); color: white; 
+            font-size: 0.6rem; padding: 3px 8px; border-radius: 50px;
+            position: absolute; top: 8px; right: 8px; font-weight: bold;
+        }
+
+        .total-banner { 
+            position: fixed; bottom: 0; width: 100%;
+            background: rgba(255,255,255,0.95); backdrop-filter: blur(10px);
+            padding: 15px; border-radius: 25px 25px 0 0;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.1); z-index: 1000;
+        }
+
+        .admin-only { display: none !important; }
+
+        @media print {
+            body * { visibility: hidden; }
+            #ticketPrint, #ticketPrint * { visibility: visible; }
+            #ticketPrint { position: absolute; left: 0; top: 0; width: 100%; display: block !important; }
+        }
     </style>
 </head>
 <body>
 
-<div id="loader" class="loading-overlay">
-    <div class="text-center"><div class="spinner-border text-success"></div><br><b>Conectando Almacén Tito...</b></div>
-</div>
-
 <nav class="navbar navbar-dark sticky-top p-3">
-    <div class="container-fluid">
-        <span class="navbar-brand h1 fw-bold mb-0"><i class="fas fa-store me-2"></i>ALMACEN TITO</span>
-        <div>
-            <button class="btn btn-warning btn-sm fw-bold me-1" data-bs-toggle="modal" data-bs-target="#modalCaja"><i class="fas fa-cash-register"></i> CAJA</button>
-            <button class="btn btn-light btn-sm fw-bold" onclick="validarAcceso(abrirModalNuevo)"><i class="fas fa-plus"></i> STOCK</button>
+    <div class="container d-flex justify-content-between align-items-center">
+        <span class="navbar-brand fw-bold"><i class="fas fa-store-alt me-2 text-warning"></i>ALMACÉN TITO</span>
+        <div class="d-flex gap-2">
+            <div id="btnGroupAdmin" class="admin-only d-flex gap-1">
+                <button class="btn btn-warning btn-sm rounded-pill" data-bs-toggle="modal" data-bs-target="#modalCaja" title="Caja Diaria"><i class="fas fa-chart-line"></i></button>
+                <button class="btn btn-light btn-sm rounded-pill" onclick="abrirModalNuevo()" title="Nuevo Producto"><i class="fas fa-plus"></i></button>
+                <button class="btn btn-outline-danger btn-sm rounded-pill" onclick="cerrarSesion()" title="Salir"><i class="fas fa-power-off"></i></button>
+            </div>
+            <button id="btnLogin" class="btn btn-link text-white text-decoration-none" onclick="mostrarLogin()"><i class="fas fa-lock"></i></button>
         </div>
     </div>
 </nav>
 
-<div class="container mt-3">
-    <ul class="nav nav-pills nav-fill mb-3 bg-white p-2 rounded-pill shadow-sm">
-        <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tab-ventas">VENDER</a></li>
-        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-stock">STOCK</a></li>
-        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-fiados">FIADOS</a></li>
+<div class="container mt-2">
+    <!-- Categorías para Clientes -->
+    <div class="cat-container mb-3">
+        <button class="cat-btn active" onclick="filtrarPorCategoria('Todas', this)">Todas</button>
+        <button class="cat-btn" onclick="filtrarPorCategoria('Oferta', this)"><i class="fas fa-star text-warning"></i> Ofertas</button>
+        <button class="cat-btn" onclick="filtrarPorCategoria('Fiambre', this)">Fiambre</button>
+        <button class="cat-btn" onclick="filtrarPorCategoria('Polleria', this)">Pollería</button>
+        <button class="cat-btn" onclick="filtrarPorCategoria('Verduleria', this)">Verdulería</button>
+        <button class="cat-btn" onclick="filtrarPorCategoria('Almacen', this)">Almacén</button>
+        <button class="cat-btn" onclick="filtrarPorCategoria('Bebidas', this)">Bebidas</button>
+    </div>
+
+    <!-- Pestañas Dueña -->
+    <ul class="nav nav-pills nav-fill mb-3 bg-white p-1 rounded-pill shadow-sm admin-only">
+        <li class="nav-item"><a class="nav-link active rounded-pill" data-bs-toggle="tab" href="#tab-ventas">CLIENTES</a></li>
+        <li class="nav-item"><a class="nav-link rounded-pill" data-bs-toggle="tab" href="#tab-stock">STOCK</a></li>
+        <li class="nav-item"><a class="nav-link rounded-pill" data-bs-toggle="tab" href="#tab-fiados">FIADOS</a></li>
     </ul>
 
     <div class="tab-content">
         <div class="tab-pane fade show active" id="tab-ventas">
-            <div class="d-flex gap-2 overflow-auto pb-3">
-                <button class="cat-btn active" onclick="filtrarPorCategoria('Todas', this)"><i class="fas fa-th"></i>Todas</button>
-                <button class="cat-btn" onclick="filtrarPorCategoria('Almacen', this)"><i class="fas fa-box-open"></i>Almacén</button>
-                <button class="cat-btn" onclick="filtrarPorCategoria('Bebidas', this)"><i class="fas fa-wine-bottle"></i>Bebidas</button>
-                <button class="cat-btn" onclick="filtrarPorCategoria('Verduleria', this)"><i class="fas fa-leaf"></i>Verdura</button>
-                <button class="cat-btn" onclick="filtrarPorCategoria('Polleria', this)"><i class="fas fa-drumstick-bite"></i>Pollo</button>
+            <div class="input-group mb-3 shadow-sm rounded-pill overflow-hidden bg-white border-0">
+                <span class="input-group-text border-0 bg-white"><i class="fas fa-search text-muted"></i></span>
+                <input type="text" id="searchVenta" class="form-control border-0 p-2" placeholder="¿Qué buscás hoy?" onkeyup="filterVentas()">
             </div>
-            <input type="text" id="searchVenta" class="form-control mb-3 shadow-sm" placeholder="Buscar producto..." onkeyup="filterVentas()">
-            <div id="listaVentas" class="row g-2 mb-4"></div>
-            <h6 class="fw-bold small">TICKET ACTUAL:</h6>
-            <div id="detalleCarrito" class="shadow-sm small"><div class="text-muted text-center">Vacío</div></div>
+            <div id="listaVentas" class="row g-2"></div>
         </div>
-
         <div class="tab-pane fade" id="tab-stock">
-            <div class="d-flex mb-3">
-                <input type="text" id="searchStock" class="form-control me-2" placeholder="Buscar en stock..." onkeyup="filterStock()">
-                <button id="btnLock" class="btn btn-outline-secondary btn-sm" onclick="cerrarSesion()" style="display:none;"><i class="fas fa-lock"></i></button>
-            </div>
-            <div id="listaStock"></div>
+            <div id="listaStock" class="list-group"></div>
         </div>
-        
         <div class="tab-pane fade" id="tab-fiados">
-            <button class="btn btn-danger w-100 mb-3 py-2 fw-bold" data-bs-toggle="modal" data-bs-target="#modalFiado">NUEVA DEUDA</button>
             <div id="listaFiados"></div>
         </div>
     </div>
 </div>
 
-<div class="total-banner shadow-lg">
+<div class="total-banner">
     <div class="container d-flex justify-content-between align-items-center">
-        <div><small class="text-secondary d-block">TOTAL</small><h2 class="mb-0 fw-bold" id="cartTotal">$0</h2></div>
-        <button class="btn btn-success btn-lg px-4 fw-bold" onclick="prepararCobro()">COBRAR</button>
+        <div>
+            <div id="detalleCarrito" class="small text-muted" style="max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Bolsa vacía</div>
+            <h2 class="mb-0 fw-bold" id="cartTotal">$0</h2>
+        </div>
+        <button class="btn btn-success btn-lg rounded-4 px-4 fw-bold shadow" onclick="prepararTicket()">LISTO</button>
     </div>
 </div>
 
-<div class="modal fade" id="modalCaja" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0"><div class="modal-header bg-warning"><h5 class="modal-title fw-bold">Caja Diaria</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-4 text-center"><div id="resumenCajaContent"></div><hr><button class="btn btn-danger w-100" onclick="validarAcceso(limpiarCaja)">REINICIAR DÍA</button></div></div></div></div>
+<!-- Modal de Ticket para el Cliente -->
+<div class="modal fade" id="modalTicket" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-5 p-4 shadow-lg text-center">
+            <i class="fas fa-receipt display-4 text-success mb-3"></i>
+            <h4 class="fw-bold">Pedido Confirmado</h4>
+            <div id="resumenModal" class="my-3 p-3 bg-light rounded-4 text-start small"></div>
+            <button class="btn btn-dark btn-lg w-100 py-3 rounded-4 mb-2" onclick="imprimirPedido()">
+                <i class="fas fa-print me-2"></i> IMPRIMIR TICKET
+            </button>
+            <div id="adminOptionsCobro" class="admin-only border-top pt-3">
+                <p class="small fw-bold text-primary">MODO SUSANA: COBRAR</p>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary" onclick="finalizarVenta('Efectivo')">Efectivo</button>
+                    <button class="btn btn-outline-info" onclick="finalizarVenta('Transferencia')">Transferencia</button>
+                    <button class="btn btn-outline-danger" onclick="finalizarVenta('Fiado')">A Fiado</button>
+                </div>
+            </div>
+            <button class="btn btn-link text-muted mt-2" data-bs-dismiss="modal">Seguir comprando</button>
+        </div>
+    </div>
+</div>
 
-<div class="modal fade" id="modalProducto" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-body p-4">
+<!-- Modal Nuevo Producto -->
+<div class="modal fade" id="modalProducto" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content p-4 border-0 rounded-4">
+    <h5 class="fw-bold">Nuevo Producto</h5>
     <input type="hidden" id="prodId">
-    <label class="small fw-bold">NOMBRE</label><input type="text" id="prodNombre" class="form-control mb-2">
-    <label class="small fw-bold">PRECIO</label><input type="number" id="prodPrecio" class="form-control mb-2">
-    <label class="small fw-bold">CATEGORIA</label><select id="prodCat" class="form-select mb-2"><option value="Almacen">Almacén</option><option value="Bebidas">Bebidas</option><option value="Verduleria">Verdulería</option><option value="Polleria">Pollería</option></select>
-    <label class="small fw-bold">STOCK</label><select id="prodEstado" class="form-select mb-3"><option value="true">SÍ HAY</option><option value="false">AGOTADO</option></select>
-    <button class="btn btn-success w-100 fw-bold" onclick="guardarProducto()">GUARDAR</button>
-</div></div></div></div>
+    <input type="text" id="prodNombre" class="form-control mb-2" placeholder="Nombre">
+    <input type="number" id="prodPrecio" class="form-control mb-2" placeholder="Precio $">
+    <select id="prodCat" class="form-select mb-2">
+        <option value="Almacen">Almacén</option>
+        <option value="Fiambre">Fiambre</option>
+        <option value="Polleria">Pollería</option>
+        <option value="Verduleria">Verdulería</option>
+        <option value="Bebidas">Bebidas</option>
+        <option value="Oferta">Oferta ⭐</option>
+    </select>
+    <select id="prodEstado" class="form-select mb-3"><option value="true">SÍ HAY</option><option value="false">AGOTADO</option></select>
+    <button class="btn btn-success w-100 fw-bold rounded-pill py-2" onclick="guardarProducto()">GUARDAR</button>
+</div></div></div>
 
-<div class="modal fade" id="modalCobro" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 text-center p-4"><h2 class="fw-bold mb-4" id="cobroMonto"></h2><button class="btn btn-outline-primary mb-2 py-3 fw-bold w-100" onclick="finalizarVenta('Efectivo')">EFECTIVO</button><button class="btn btn-outline-info py-3 fw-bold w-100" onclick="finalizarVenta('Transferencia')">TRANSFERENCIA</button></div></div></div>
+<!-- Ticket Imprimible -->
+<div id="ticketPrint" style="display:none; font-family: monospace; width: 280px; padding: 10px; color: black; background: white;">
+    <div style="text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px;">
+        <h3>ALMACÉN TITO</h3>
+        <p id="fechaTicket" style="font-size: 12px;"></p>
+    </div>
+    <div id="itemsTicket" style="margin-top: 10px;"></div>
+    <div style="border-top: 2px dashed #000; margin-top: 10px; padding-top: 10px; text-align: right;">
+        <h3 id="totalTicket"></h3>
+    </div>
+    <center><p style="font-size: 11px; margin-top: 15px;">Pague en caja con este ticket. ¡Gracias!</p></center>
+</div>
 
-<div class="modal fade" id="modalFiado" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content p-4 border-0"><h5 class="fw-bold">Anotar Deuda</h5><input type="text" id="fiadoCliente" class="form-control mb-2" placeholder="Cliente"><input type="number" id="fiadoMonto" class="form-control mb-2" placeholder="Monto $"><textarea id="fiadoNota" class="form-control mb-3" placeholder="Detalle"></textarea><button class="btn btn-danger w-100 fw-bold" onclick="guardarFiado()">ANOTAR</button></div></div></div>
-
-<div class="modal fade" id="modalCobrarFiado" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content p-4 border-0 text-center">
-    <h5 class="fw-bold" id="titleCobrarFiado"></h5>
-    <p class="text-muted">¿Cómo pagó el cliente?</p>
-    <button class="btn btn-primary w-100 mb-2 fw-bold" onclick="procesarPagoFiado('Efectivo')">PAGÓ EN EFECTIVO</button>
-    <button class="btn btn-info w-100 mb-2 fw-bold" onclick="procesarPagoFiado('Transferencia')">PAGÓ POR TRANSF.</button>
-    <hr>
-    <button class="btn btn-outline-danger w-100 btn-sm" onclick="soloBorrarFiado()">SOLO BORRAR (Sin sumar a caja)</button>
+<!-- Modal Login -->
+<div class="modal fade" id="modalLogin" tabindex="-1"><div class="modal-dialog modal-sm modal-dialog-centered"><div class="modal-content p-4 border-0 shadow rounded-4 text-center">
+    <h5 class="fw-bold mb-3">Acceso Susana</h5>
+    <input type="text" id="userInput" class="form-control mb-2" placeholder="Usuario">
+    <input type="password" id="passInput" class="form-control mb-3" placeholder="Contraseña">
+    <button class="btn btn-dark w-100 rounded-pill" onclick="validarLogin()">ENTRAR</button>
 </div></div></div>
 
 <script type="module">
@@ -122,216 +210,122 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    const CLAVE_MAESTRA = "Pimienta";
-    let isAdmin = false;
+    let isAdmin = false, productos = [], carrito = [], categoriaActual = 'Todas';
 
-    let productos = [];
-    let fiados = [];
-    let ventasDia = [];
-    let carrito = [];
-    let categoriaActual = 'Todas';
-    let fiadoSeleccionado = null;
-
-    onValue(ref(db, 'productos'), (snapshot) => {
-        productos = snapshot.val() ? Object.values(snapshot.val()) : [];
-        renderAll();
-        document.getElementById('loader').style.display = 'none';
-    });
-
-    onValue(ref(db, 'ventas'), (snapshot) => {
-        ventasDia = snapshot.val() ? Object.values(snapshot.val()) : [];
-    });
-
-    onValue(ref(db, 'fiados'), (snapshot) => {
-        fiados = snapshot.val() ? Object.values(snapshot.val()) : [];
-        renderAll();
-    });
-
-    // ADMIN SESIÓN
-    window.validarAcceso = (callback, id = null) => {
-        if (isAdmin) { id ? callback(id) : callback(); return; }
-        const pass = prompt("Clave de administrador:");
-        if (pass === CLAVE_MAESTRA) { isAdmin = true; document.getElementById('btnLock').style.display = 'block'; id ? callback(id) : callback(); }
-        else alert("Incorrecta");
+    window.mostrarLogin = () => new bootstrap.Modal(document.getElementById('modalLogin')).show();
+    window.validarLogin = () => {
+        if(document.getElementById('userInput').value.toUpperCase() === "SUSANA" && document.getElementById('passInput').value === "Pimienta") {
+            isAdmin = true; localStorage.setItem('tito_adm', 'si'); actualizarUI();
+            bootstrap.Modal.getInstance(document.getElementById('modalLogin')).hide();
+        } else { alert("Datos incorrectos"); }
     };
+    window.cerrarSesion = () => { isAdmin = false; localStorage.removeItem('tito_adm'); location.reload(); };
 
-    window.cerrarSesion = () => { isAdmin = false; document.getElementById('btnLock').style.display = 'none'; alert("Sesión cerrada"); };
+    function actualizarUI() {
+        const elements = document.querySelectorAll('.admin-only');
+        elements.forEach(el => {
+            if(isAdmin) el.classList.remove('admin-only');
+            else el.style.display = 'none';
+        });
+        document.getElementById('btnLogin').style.display = isAdmin ? 'none' : 'block';
+    }
+    if(localStorage.getItem('tito_adm')) { isAdmin = true; setTimeout(actualizarUI, 500); }
 
-    // STOCK
+    onValue(ref(db, 'productos'), (snap) => { productos = snap.val() ? Object.values(snap.val()) : []; renderAll(); });
+
     window.abrirModalNuevo = () => {
-        document.getElementById('prodId').value = '';
-        document.getElementById('prodNombre').value = '';
-        document.getElementById('prodPrecio').value = '';
+        document.getElementById('prodId').value = ''; document.getElementById('prodNombre').value = ''; document.getElementById('prodPrecio').value = '';
         new bootstrap.Modal(document.getElementById('modalProducto')).show();
     };
 
     window.guardarProducto = () => {
         const id = document.getElementById('prodId').value || Date.now();
         set(ref(db, 'productos/' + id), {
-            id: id.toString(),
-            nombre: document.getElementById('prodNombre').value,
-            precio: parseFloat(document.getElementById('prodPrecio').value) || 0,
-            categoria: document.getElementById('prodCat').value,
-            stock: document.getElementById('prodEstado').value === "true"
+            id: id.toString(), nombre: document.getElementById('prodNombre').value,
+            precio: parseFloat(document.getElementById('prodPrecio').value),
+            categoria: document.getElementById('prodCat').value, stock: document.getElementById('prodEstado').value === "true"
         });
         bootstrap.Modal.getInstance(document.getElementById('modalProducto')).hide();
-        if (!document.getElementById('prodId').value) {
-            setTimeout(() => { if(confirm("¿Cargar otro?")) abrirModalNuevo(); }, 500);
-        }
     };
 
-    window.eliminarProd = (id) => { if(confirm('¿Borrar?')) remove(ref(db, 'productos/' + id)); };
-    window.editarProd = (id) => {
-        const p = productos.find(x => x.id == id);
-        document.getElementById('prodId').value = p.id;
-        document.getElementById('prodNombre').value = p.nombre;
-        document.getElementById('prodPrecio').value = p.precio;
-        document.getElementById('prodCat').value = p.categoria;
-        document.getElementById('prodEstado').value = p.stock.toString();
-        new bootstrap.Modal(document.getElementById('modalProducto')).show();
-    };
-
-    // VENTAS
     window.agregarAlCarrito = (id) => {
         const p = productos.find(x => x.id == id);
-        const index = carrito.findIndex(item => item.id == id);
-        if (index > -1) carrito[index].cantidad += 1;
-        else carrito.push({ ...p, cantidad: 1 });
-        actualizarCarritoUI();
+        if(!p.stock) return;
+        const ya = carrito.find(i => i.id == id);
+        if(ya) ya.cantidad++; else carrito.push({...p, cantidad: 1});
+        actualizarCarrito();
     };
 
-    window.quitarDelCarrito = (id) => {
-        const index = carrito.findIndex(item => item.id == id);
-        if (index > -1) {
-            if (carrito[index].cantidad > 1) carrito[index].cantidad -= 1;
-            else carrito.splice(index, 1);
-        }
-        actualizarCarritoUI();
-    };
-
-    function actualizarCarritoUI() {
-        const detalle = document.getElementById('detalleCarrito');
-        if (carrito.length === 0) { detalle.innerHTML = '<div class="text-muted text-center">Vacío</div>'; document.getElementById('cartTotal').innerText = "$0"; return; }
-        let total = 0; let html = '';
-        carrito.forEach(item => {
-            const sub = item.precio * item.cantidad; total += sub;
-            html += `<div class="item-carrito"><span><b>${item.cantidad}x</b> ${item.nombre}</span><span>$${sub}<button class="btn btn-sm text-danger ms-2" onclick="quitarDelCarrito(${item.id})"><i class="fas fa-trash"></i></button></span></div>`;
-        });
-        detalle.innerHTML = html;
+    function actualizarCarrito() {
+        const total = carrito.reduce((a,b)=>a+(b.precio*b.cantidad),0);
         document.getElementById('cartTotal').innerText = `$${total.toLocaleString()}`;
+        document.getElementById('detalleCarrito').innerText = carrito.length > 0 ? carrito.map(i=>`${i.cantidad}x ${i.nombre}`).join(', ') : 'Bolsa vacía';
     }
 
-    window.prepararCobro = () => {
+    window.prepararTicket = () => {
         if(carrito.length === 0) return;
-        const total = carrito.reduce((acc, p) => acc + (p.precio * p.cantidad), 0);
-        document.getElementById('cobroMonto').innerText = `Total: $${total.toLocaleString()}`;
-        new bootstrap.Modal(document.getElementById('modalCobro')).show();
+        document.getElementById('resumenModal').innerHTML = carrito.map(i => `<div>${i.cantidad}x ${i.nombre} - $${i.precio*i.cantidad}</div>`).join('');
+        new bootstrap.Modal(document.getElementById('modalTicket')).show();
     };
 
-    window.finalizarVenta = (metodo) => {
-        const total = carrito.reduce((acc, p) => acc + (p.precio * p.cantidad), 0);
-        push(ref(db, 'ventas'), { monto: total, metodo: metodo, fecha: new Date().toLocaleDateString() });
-        carrito = []; actualizarCarritoUI();
-        bootstrap.Modal.getInstance(document.getElementById('modalCobro')).hide();
+    window.imprimirPedido = () => {
+        document.getElementById('itemsTicket').innerHTML = carrito.map(i => `<div style="display:flex; justify-content:space-between;"><span>${i.cantidad}x ${i.nombre.substring(0,15)}</span><span>$${i.precio*i.cantidad}</span></div>`).join('');
+        document.getElementById('totalTicket').innerText = `TOTAL: ${document.getElementById('cartTotal').innerText}`;
+        document.getElementById('fechaTicket').innerText = new Date().toLocaleString();
+        window.print();
+        if(!isAdmin) { carrito = []; actualizarCarrito(); bootstrap.Modal.getInstance(document.getElementById('modalTicket')).hide(); }
     };
 
-    // FIADOS
-    window.guardarFiado = () => {
-        const id = Date.now();
-        set(ref(db, 'fiados/' + id), {
-            id: id,
-            cliente: document.getElementById('fiadoCliente').value,
-            monto: parseFloat(document.getElementById('fiadoMonto').value),
-            nota: document.getElementById('fiadoNota').value
-        });
-        bootstrap.Modal.getInstance(document.getElementById('modalFiado')).hide();
-        document.getElementById('fiadoCliente').value = ''; document.getElementById('fiadoMonto').value = '';
-    };
-
-    window.abrirCobroFiado = (id) => {
-        fiadoSeleccionado = fiados.find(f => f.id == id);
-        document.getElementById('titleCobrarFiado').innerText = `Cobrar a ${fiadoSeleccionado.cliente}: $${fiadoSeleccionado.monto}`;
-        new bootstrap.Modal(document.getElementById('modalCobrarFiado')).show();
-    };
-
-    window.procesarPagoFiado = (metodo) => {
-        // Sumar a la caja del día
-        push(ref(db, 'ventas'), { 
-            monto: fiadoSeleccionado.monto, 
-            metodo: metodo, 
-            fecha: new Date().toLocaleDateString(),
-            nota: `Cobro fiado: ${fiadoSeleccionado.cliente}`
-        });
-        // Borrar el fiado
-        remove(ref(db, 'fiados/' + fiadoSeleccionado.id));
-        bootstrap.Modal.getInstance(document.getElementById('modalCobrarFiado')).hide();
-        alert("Pago sumado a la caja y deuda borrada.");
-    };
-
-    window.soloBorrarFiado = () => {
-        if(confirm("¿Seguro? Esto borrará la deuda SIN sumarla a la caja.")) {
-            remove(ref(db, 'fiados/' + fiadoSeleccionado.id));
-            bootstrap.Modal.getInstance(document.getElementById('modalCobrarFiado')).hide();
+    window.finalizarVenta = (met) => {
+        const total = carrito.reduce((a,b)=>a+(b.precio*b.cantidad),0);
+        if(met === 'Fiado') {
+            const cli = prompt("¿Nombre del cliente?");
+            if(!cli) return;
+            set(ref(db, 'fiados/' + Date.now()), { id: Date.now(), cliente: cli, monto: total, nota: carrito.map(i=>`${i.cantidad} ${i.nombre}`).join(', ') });
+        } else {
+            push(ref(db, 'ventas'), { monto: total, metodo: met, fecha: new Date().toLocaleDateString() });
         }
+        carrito = []; actualizarCarrito();
+        bootstrap.Modal.getInstance(document.getElementById('modalTicket')).hide();
     };
 
-    // RENDERIZADO
     function renderAll() {
-        // Ventas
         let filt = categoriaActual === 'Todas' ? productos : productos.filter(p => p.categoria === categoriaActual);
         document.getElementById('listaVentas').innerHTML = filt.map(p => `
-            <div class="col-6 p-1"><div class="card p-3 product-item ${!p.stock?'out-of-stock':''}" onclick="agregarAlCarrito(${p.id})">
-                <small class="text-muted d-block" style="font-size:0.6rem">${p.categoria.toUpperCase()}</small>
-                <div class="text-truncate fw-bold" style="font-size:0.85rem">${p.nombre}</div>
-                <h5 class="fw-bold mb-0 text-success">$${p.precio}</h5>
-            </div></div>`).join('');
-        // Stock
-        document.getElementById('listaStock').innerHTML = productos.sort((a,b)=>a.nombre.localeCompare(b.nombre)).map(p => `
-            <div class="card p-3 d-flex flex-row justify-content-between align-items-center">
-                <div><b>${p.nombre}</b><br><span class="text-success">$${p.precio}</span></div>
-                <div><button class="btn btn-sm btn-outline-primary me-1" onclick="validarAcceso(editarProd, ${p.id})"><i class="fas fa-edit"></i></button>
-                <button class="btn btn-sm btn-outline-danger" onclick="validarAcceso(eliminarProd, ${p.id})"><i class="fas fa-trash"></i></button></div>
-            </div>`).join('');
-        // Fiados
-        document.getElementById('listaFiados').innerHTML = fiados.map(f => `
-            <div class="card p-3 border-start border-danger border-4 shadow-sm">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div><b class="fs-5">${f.cliente}</b><br><small class="text-muted">${f.nota || ''}</small></div>
-                    <div class="text-end"><h4 class="text-danger fw-bold mb-1">$${f.monto}</h4>
-                    <button class="btn btn-success btn-sm fw-bold" onclick="abrirCobroFiado(${f.id})">COBRAR</button></div>
+            <div class="col-6 col-md-4">
+                <div class="card card-product ${p.categoria==='Oferta'?'cat-oferta':''} ${!p.stock?'opacity-50':''}" onclick="agregarAlCarrito(${p.id})">
+                    ${p.categoria==='Oferta'?'<span class="badge-oferta">OFERTA ⭐</span>':''}
+                    <div class="card-body p-3">
+                        <small class="text-uppercase text-muted fw-bold" style="font-size: 0.6rem;">${p.categoria}</small>
+                        <h6 class="fw-bold mb-2" style="font-size: 0.85rem; height: 35px; overflow:hidden;">${p.nombre}</h6>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="price-tag">$${p.precio}</span>
+                            <i class="fas fa-plus-circle text-success fs-5"></i>
+                        </div>
+                    </div>
                 </div>
             </div>`).join('');
+
+        if(isAdmin) {
+            document.getElementById('listaStock').innerHTML = productos.map(p => `
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <span><b>${p.nombre}</b> ($${p.precio})</span>
+                    <button class="btn btn-sm btn-primary" onclick="editarProd(${p.id})">Editar</button>
+                </div>`).join('');
+        }
     }
 
-    // FILTROS Y CAJA
-    window.filtrarPorCategoria = (cat, btn) => { 
-        categoriaActual = cat; 
-        document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active')); 
-        btn.classList.add('active'); renderAll(); 
+    window.filtrarPorCategoria = (cat, btn) => {
+        categoriaActual = cat;
+        document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active'); renderAll();
     };
 
     window.filterVentas = () => {
         let f = document.getElementById('searchVenta').value.toUpperCase();
-        let items = document.getElementById('listaVentas').getElementsByClassName('col-6');
-        for (let i = 0; i < items.length; i++) items[i].style.display = items[i].innerText.toUpperCase().indexOf(f) > -1 ? "" : "none";
+        let items = document.getElementById('listaVentas').children;
+        for(let i=0; i<items.length; i++) items[i].style.display = items[i].innerText.toUpperCase().includes(f) ? "" : "none";
     };
-
-    window.filterStock = () => {
-        let f = document.getElementById('searchStock').value.toUpperCase();
-        let items = document.getElementById('listaStock').getElementsByClassName('card');
-        for (let i = 0; i < items.length; i++) items[i].style.display = items[i].innerText.toUpperCase().indexOf(f) > -1 ? "" : "none";
-    };
-
-    window.limpiarCaja = () => { remove(ref(db, 'ventas')); alert("Caja reiniciada"); bootstrap.Modal.getInstance(document.getElementById('modalCaja')).hide(); };
-
-    document.getElementById('modalCaja').addEventListener('show.bs.modal', function () {
-        const hoy = new Date().toLocaleDateString();
-        const deHoy = ventasDia.filter(v => v.fecha === hoy);
-        const efec = deHoy.filter(v => v.metodo === 'Efectivo').reduce((acc, v) => acc + v.monto, 0);
-        const trans = deHoy.filter(v => v.metodo === 'Transferencia').reduce((acc, v) => acc + v.monto, 0);
-        document.getElementById('resumenCajaContent').innerHTML = `<h5>${hoy}</h5><div class="d-flex justify-content-between"><span>Efectivo:</span><b>$${efec.toLocaleString()}</b></div><div class="d-flex justify-content-between"><span>Transferencia:</span><b>$${trans.toLocaleString()}</b></div><hr><h3>TOTAL: $${(efec+trans).toLocaleString()}</h3>`;
-    });
-
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>

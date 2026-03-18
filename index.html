@@ -21,13 +21,12 @@
         .item-carrito { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding: 5px 0; }
         .total-banner { position: fixed; bottom: 0; left: 0; right: 0; background: var(--tito-dark); color: white; padding: 15px; z-index: 1000; border-radius: 20px 20px 0 0; }
         .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 9999; display: flex; justify-content: center; align-items: center; }
-        .admin-badge { font-size: 0.7rem; background: #fff3e0; color: #ef6c00; padding: 2px 8px; border-radius: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div id="loader" class="loading-overlay">
-    <div class="text-center"><div class="spinner-border text-success"></div><br><b>Conectando con la nube...</b></div>
+    <div class="text-center"><div class="spinner-border text-success"></div><br><b>Conectando Almacén Tito...</b></div>
 </div>
 
 <nav class="navbar navbar-dark sticky-top p-3">
@@ -49,7 +48,7 @@
 
     <div class="tab-content">
         <div class="tab-pane fade show active" id="tab-ventas">
-            <div class="d-flex gap-2 overflow-auto pb-3" id="filtrosCategorias">
+            <div class="d-flex gap-2 overflow-auto pb-3">
                 <button class="cat-btn active" onclick="filtrarPorCategoria('Todas', this)"><i class="fas fa-th"></i>Todas</button>
                 <button class="cat-btn" onclick="filtrarPorCategoria('Almacen', this)"><i class="fas fa-box-open"></i>Almacén</button>
                 <button class="cat-btn" onclick="filtrarPorCategoria('Bebidas', this)"><i class="fas fa-wine-bottle"></i>Bebidas</button>
@@ -63,7 +62,7 @@
         </div>
 
         <div class="tab-pane fade" id="tab-stock">
-            <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex mb-3">
                 <input type="text" id="searchStock" class="form-control me-2" placeholder="Buscar en stock..." onkeyup="filterStock()">
                 <button id="btnLock" class="btn btn-outline-secondary btn-sm" onclick="cerrarSesion()" style="display:none;"><i class="fas fa-lock"></i></button>
             </div>
@@ -84,31 +83,29 @@
     </div>
 </div>
 
-<div class="modal fade" id="modalCaja" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0">
-        <div class="modal-header bg-warning"><h5 class="modal-title fw-bold">Caja Diaria</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-        <div class="modal-body p-4 text-center">
-            <div id="resumenCajaContent"></div><hr>
-            <button class="btn btn-danger w-100" onclick="validarAcceso(limpiarCaja)">REINICIAR DÍA</button>
-        </div>
-    </div></div>
-</div>
+<div class="modal fade" id="modalCaja" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0"><div class="modal-header bg-warning"><h5 class="modal-title fw-bold">Caja Diaria</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-4 text-center"><div id="resumenCajaContent"></div><hr><button class="btn btn-danger w-100" onclick="validarAcceso(limpiarCaja)">REINICIAR DÍA</button></div></div></div></div>
 
 <div class="modal fade" id="modalProducto" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-body p-4">
     <input type="hidden" id="prodId">
     <label class="small fw-bold">NOMBRE</label><input type="text" id="prodNombre" class="form-control mb-2">
     <label class="small fw-bold">PRECIO</label><input type="number" id="prodPrecio" class="form-control mb-2">
-    <label class="small fw-bold">CATEGORIA</label>
-    <select id="prodCat" class="form-select mb-2">
-        <option value="Almacen">Almacén</option>
-        <option value="Bebidas">Bebidas</option>
-        <option value="Verduleria">Verdulería</option>
-        <option value="Polleria">Pollería</option>
-    </select>
-    <label class="small fw-bold">STOCK</label>
-    <select id="prodEstado" class="form-select mb-3"><option value="true">SÍ HAY</option><option value="false">AGOTADO</option></select>
+    <label class="small fw-bold">CATEGORIA</label><select id="prodCat" class="form-select mb-2"><option value="Almacen">Almacén</option><option value="Bebidas">Bebidas</option><option value="Verduleria">Verdulería</option><option value="Polleria">Pollería</option></select>
+    <label class="small fw-bold">STOCK</label><select id="prodEstado" class="form-select mb-3"><option value="true">SÍ HAY</option><option value="false">AGOTADO</option></select>
     <button class="btn btn-success w-100 fw-bold" onclick="guardarProducto()">GUARDAR</button>
 </div></div></div></div>
+
+<div class="modal fade" id="modalCobro" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 text-center p-4"><h2 class="fw-bold mb-4" id="cobroMonto"></h2><button class="btn btn-outline-primary mb-2 py-3 fw-bold w-100" onclick="finalizarVenta('Efectivo')">EFECTIVO</button><button class="btn btn-outline-info py-3 fw-bold w-100" onclick="finalizarVenta('Transferencia')">TRANSFERENCIA</button></div></div></div>
+
+<div class="modal fade" id="modalFiado" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content p-4 border-0"><h5 class="fw-bold">Anotar Deuda</h5><input type="text" id="fiadoCliente" class="form-control mb-2" placeholder="Cliente"><input type="number" id="fiadoMonto" class="form-control mb-2" placeholder="Monto $"><textarea id="fiadoNota" class="form-control mb-3" placeholder="Detalle"></textarea><button class="btn btn-danger w-100 fw-bold" onclick="guardarFiado()">ANOTAR</button></div></div></div>
+
+<div class="modal fade" id="modalCobrarFiado" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content p-4 border-0 text-center">
+    <h5 class="fw-bold" id="titleCobrarFiado"></h5>
+    <p class="text-muted">¿Cómo pagó el cliente?</p>
+    <button class="btn btn-primary w-100 mb-2 fw-bold" onclick="procesarPagoFiado('Efectivo')">PAGÓ EN EFECTIVO</button>
+    <button class="btn btn-info w-100 mb-2 fw-bold" onclick="procesarPagoFiado('Transferencia')">PAGÓ POR TRANSF.</button>
+    <hr>
+    <button class="btn btn-outline-danger w-100 btn-sm" onclick="soloBorrarFiado()">SOLO BORRAR (Sin sumar a caja)</button>
+</div></div></div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -126,8 +123,6 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const CLAVE_MAESTRA = "Pimienta";
-    
-    // VARIABLE DE SESIÓN: Falsa al inicio
     let isAdmin = false;
 
     let productos = [];
@@ -135,49 +130,34 @@
     let ventasDia = [];
     let carrito = [];
     let categoriaActual = 'Todas';
+    let fiadoSeleccionado = null;
 
     onValue(ref(db, 'productos'), (snapshot) => {
-        const data = snapshot.val();
-        productos = data ? Object.values(data) : [];
+        productos = snapshot.val() ? Object.values(snapshot.val()) : [];
         renderAll();
         document.getElementById('loader').style.display = 'none';
     });
 
     onValue(ref(db, 'ventas'), (snapshot) => {
-        const data = snapshot.val();
-        ventasDia = data ? Object.values(data) : [];
+        ventasDia = snapshot.val() ? Object.values(snapshot.val()) : [];
     });
 
     onValue(ref(db, 'fiados'), (snapshot) => {
-        const data = snapshot.val();
-        fiados = data ? Object.values(data) : [];
+        fiados = snapshot.val() ? Object.values(snapshot.val()) : [];
         renderAll();
     });
 
-    // VALIDACIÓN INTELIGENTE
+    // ADMIN SESIÓN
     window.validarAcceso = (callback, id = null) => {
-        if (isAdmin) {
-            // Si ya puso la clave antes, entra directo
-            id ? callback(id) : callback();
-            return;
-        }
-
-        const pass = prompt("Ingrese código de administrador:");
-        if (pass === CLAVE_MAESTRA) {
-            isAdmin = true; // ACTIVAR SESIÓN
-            document.getElementById('btnLock').style.display = 'block';
-            id ? callback(id) : callback();
-        } else {
-            alert("Código incorrecto.");
-        }
+        if (isAdmin) { id ? callback(id) : callback(); return; }
+        const pass = prompt("Clave de administrador:");
+        if (pass === CLAVE_MAESTRA) { isAdmin = true; document.getElementById('btnLock').style.display = 'block'; id ? callback(id) : callback(); }
+        else alert("Incorrecta");
     };
 
-    window.cerrarSesion = () => {
-        isAdmin = false;
-        document.getElementById('btnLock').style.display = 'none';
-        alert("Sesión de administrador cerrada.");
-    };
+    window.cerrarSesion = () => { isAdmin = false; document.getElementById('btnLock').style.display = 'none'; alert("Sesión cerrada"); };
 
+    // STOCK
     window.abrirModalNuevo = () => {
         document.getElementById('prodId').value = '';
         document.getElementById('prodNombre').value = '';
@@ -187,27 +167,20 @@
 
     window.guardarProducto = () => {
         const id = document.getElementById('prodId').value || Date.now();
-        const p = {
+        set(ref(db, 'productos/' + id), {
             id: id.toString(),
             nombre: document.getElementById('prodNombre').value,
             precio: parseFloat(document.getElementById('prodPrecio').value) || 0,
             categoria: document.getElementById('prodCat').value,
             stock: document.getElementById('prodEstado').value === "true"
-        };
-        set(ref(db, 'productos/' + id), p);
+        });
         bootstrap.Modal.getInstance(document.getElementById('modalProducto')).hide();
-        // Mantiene el modal abierto para seguir cargando si es nuevo
         if (!document.getElementById('prodId').value) {
-             setTimeout(() => { if(confirm("¿Cargar otro producto?")) abrirModalNuevo(); }, 500);
+            setTimeout(() => { if(confirm("¿Cargar otro?")) abrirModalNuevo(); }, 500);
         }
     };
 
-    window.eliminarProd = (id) => {
-        if(confirm('¿Seguro quieres eliminar este producto?')) {
-            remove(ref(db, 'productos/' + id));
-        }
-    };
-
+    window.eliminarProd = (id) => { if(confirm('¿Borrar?')) remove(ref(db, 'productos/' + id)); };
     window.editarProd = (id) => {
         const p = productos.find(x => x.id == id);
         document.getElementById('prodId').value = p.id;
@@ -218,46 +191,35 @@
         new bootstrap.Modal(document.getElementById('modalProducto')).show();
     };
 
+    // VENTAS
     window.agregarAlCarrito = (id) => {
         const p = productos.find(x => x.id == id);
         const index = carrito.findIndex(item => item.id == id);
-        if (index > -1) { carrito[index].cantidad += 1; } 
-        else { carrito.push({ ...p, cantidad: 1 }); }
+        if (index > -1) carrito[index].cantidad += 1;
+        else carrito.push({ ...p, cantidad: 1 });
         actualizarCarritoUI();
     };
 
     window.quitarDelCarrito = (id) => {
         const index = carrito.findIndex(item => item.id == id);
         if (index > -1) {
-            if (carrito[index].cantidad > 1) { carrito[index].cantidad -= 1; } 
-            else { carrito.splice(index, 1); }
+            if (carrito[index].cantidad > 1) carrito[index].cantidad -= 1;
+            else carrito.splice(index, 1);
         }
         actualizarCarritoUI();
     };
 
     function actualizarCarritoUI() {
         const detalle = document.getElementById('detalleCarrito');
-        if (carrito.length === 0) { 
-            detalle.innerHTML = '<div class="text-muted text-center">Vacío</div>'; 
-            document.getElementById('cartTotal').innerText = "$0"; 
-            return; 
-        }
-        let html = ''; let total = 0;
+        if (carrito.length === 0) { detalle.innerHTML = '<div class="text-muted text-center">Vacío</div>'; document.getElementById('cartTotal').innerText = "$0"; return; }
+        let total = 0; let html = '';
         carrito.forEach(item => {
-            const subtotal = item.precio * item.cantidad;
-            total += subtotal;
-            html += `<div class="item-carrito"><span><b>${item.cantidad}x</b> ${item.nombre}</span><span>$${subtotal}<button class="btn btn-sm text-danger ms-2" onclick="quitarDelCarrito(${item.id})"><i class="fas fa-trash"></i></button></span></div>`;
+            const sub = item.precio * item.cantidad; total += sub;
+            html += `<div class="item-carrito"><span><b>${item.cantidad}x</b> ${item.nombre}</span><span>$${sub}<button class="btn btn-sm text-danger ms-2" onclick="quitarDelCarrito(${item.id})"><i class="fas fa-trash"></i></button></span></div>`;
         });
         detalle.innerHTML = html;
         document.getElementById('cartTotal').innerText = `$${total.toLocaleString()}`;
     }
-
-    window.filtrarPorCategoria = (cat, btn) => {
-        categoriaActual = cat;
-        document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        renderVentas();
-    };
 
     window.prepararCobro = () => {
         if(carrito.length === 0) return;
@@ -268,93 +230,106 @@
 
     window.finalizarVenta = (metodo) => {
         const total = carrito.reduce((acc, p) => acc + (p.precio * p.cantidad), 0);
-        const hoy = new Date().toLocaleDateString();
-        push(ref(db, 'ventas'), { monto: total, metodo: metodo, fecha: hoy });
-        carrito = [];
-        actualizarCarritoUI();
+        push(ref(db, 'ventas'), { monto: total, metodo: metodo, fecha: new Date().toLocaleDateString() });
+        carrito = []; actualizarCarritoUI();
         bootstrap.Modal.getInstance(document.getElementById('modalCobro')).hide();
     };
 
-    window.limpiarCaja = () => {
-        remove(ref(db, 'ventas'));
-        alert("Caja reiniciada!");
-        bootstrap.Modal.getInstance(document.getElementById('modalCaja')).hide();
-    };
-
+    // FIADOS
     window.guardarFiado = () => {
         const id = Date.now();
         set(ref(db, 'fiados/' + id), {
             id: id,
             cliente: document.getElementById('fiadoCliente').value,
-            monto: document.getElementById('fiadoMonto').value,
+            monto: parseFloat(document.getElementById('fiadoMonto').value),
             nota: document.getElementById('fiadoNota').value
         });
         bootstrap.Modal.getInstance(document.getElementById('modalFiado')).hide();
-        document.getElementById('fiadoCliente').value = '';
-        document.getElementById('fiadoMonto').value = '';
+        document.getElementById('fiadoCliente').value = ''; document.getElementById('fiadoMonto').value = '';
     };
 
-    window.borrarFiado = (id) => { if(confirm('¿Pagó?')) remove(ref(db, 'fiados/' + id)); };
+    window.abrirCobroFiado = (id) => {
+        fiadoSeleccionado = fiados.find(f => f.id == id);
+        document.getElementById('titleCobrarFiado').innerText = `Cobrar a ${fiadoSeleccionado.cliente}: $${fiadoSeleccionado.monto}`;
+        new bootstrap.Modal(document.getElementById('modalCobrarFiado')).show();
+    };
 
-    function renderVentas() {
-        let filtrados = categoriaActual === 'Todas' ? productos : productos.filter(p => p.categoria === categoriaActual);
-        document.getElementById('listaVentas').innerHTML = filtrados.map(p => `
-            <div class="col-6 p-1">
-                <div class="card p-3 product-item ${!p.stock?'out-of-stock':''}" onclick="agregarAlCarrito(${p.id})">
-                    <small style="font-size:0.6rem; color:gray; display:block">${p.categoria.toUpperCase()}</small>
-                    <div class="text-truncate fw-bold" style="font-size:0.85rem">${p.nombre}</div>
-                    <h5 class="fw-bold mb-0 text-success">$${p.precio}</h5>
-                </div>
-            </div>`).join('');
-    }
+    window.procesarPagoFiado = (metodo) => {
+        // Sumar a la caja del día
+        push(ref(db, 'ventas'), { 
+            monto: fiadoSeleccionado.monto, 
+            metodo: metodo, 
+            fecha: new Date().toLocaleDateString(),
+            nota: `Cobro fiado: ${fiadoSeleccionado.cliente}`
+        });
+        // Borrar el fiado
+        remove(ref(db, 'fiados/' + fiadoSeleccionado.id));
+        bootstrap.Modal.getInstance(document.getElementById('modalCobrarFiado')).hide();
+        alert("Pago sumado a la caja y deuda borrada.");
+    };
 
+    window.soloBorrarFiado = () => {
+        if(confirm("¿Seguro? Esto borrará la deuda SIN sumarla a la caja.")) {
+            remove(ref(db, 'fiados/' + fiadoSeleccionado.id));
+            bootstrap.Modal.getInstance(document.getElementById('modalCobrarFiado')).hide();
+        }
+    };
+
+    // RENDERIZADO
     function renderAll() {
-        renderVentas();
+        // Ventas
+        let filt = categoriaActual === 'Todas' ? productos : productos.filter(p => p.categoria === categoriaActual);
+        document.getElementById('listaVentas').innerHTML = filt.map(p => `
+            <div class="col-6 p-1"><div class="card p-3 product-item ${!p.stock?'out-of-stock':''}" onclick="agregarAlCarrito(${p.id})">
+                <small class="text-muted d-block" style="font-size:0.6rem">${p.categoria.toUpperCase()}</small>
+                <div class="text-truncate fw-bold" style="font-size:0.85rem">${p.nombre}</div>
+                <h5 class="fw-bold mb-0 text-success">$${p.precio}</h5>
+            </div></div>`).join('');
+        // Stock
         document.getElementById('listaStock').innerHTML = productos.sort((a,b)=>a.nombre.localeCompare(b.nombre)).map(p => `
             <div class="card p-3 d-flex flex-row justify-content-between align-items-center">
-                <div class="text-truncate" style="max-width:65%;"><b>${p.nombre}</b> <small class="text-muted d-block">${p.categoria}</small><span class="text-success fw-bold">$${p.precio}</span></div>
-                <div class="d-flex">
-                    <button class="btn btn-sm btn-outline-primary me-1" onclick="validarAcceso(editarProd, ${p.id})"><i class="fas fa-edit"></i></button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="validarAcceso(eliminarProd, ${p.id})"><i class="fas fa-trash"></i></button>
+                <div><b>${p.nombre}</b><br><span class="text-success">$${p.precio}</span></div>
+                <div><button class="btn btn-sm btn-outline-primary me-1" onclick="validarAcceso(editarProd, ${p.id})"><i class="fas fa-edit"></i></button>
+                <button class="btn btn-sm btn-outline-danger" onclick="validarAcceso(eliminarProd, ${p.id})"><i class="fas fa-trash"></i></button></div>
+            </div>`).join('');
+        // Fiados
+        document.getElementById('listaFiados').innerHTML = fiados.map(f => `
+            <div class="card p-3 border-start border-danger border-4 shadow-sm">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div><b class="fs-5">${f.cliente}</b><br><small class="text-muted">${f.nota || ''}</small></div>
+                    <div class="text-end"><h4 class="text-danger fw-bold mb-1">$${f.monto}</h4>
+                    <button class="btn btn-success btn-sm fw-bold" onclick="abrirCobroFiado(${f.id})">COBRAR</button></div>
                 </div>
             </div>`).join('');
-        
-        document.getElementById('listaFiados').innerHTML = fiados.map(f => `
-            <div class="card p-3 border-start border-danger border-4">
-                <div class="d-flex justify-content-between"><b>${f.cliente}</b><b class="text-danger">$${f.monto}</b></div>
-                <small>${f.nota}</small>
-                <button class="btn btn-sm btn-success mt-2" onclick="borrarFiado(${f.id})">PAGÓ</button>
-            </div>`).join('');
     }
+
+    // FILTROS Y CAJA
+    window.filtrarPorCategoria = (cat, btn) => { 
+        categoriaActual = cat; 
+        document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active')); 
+        btn.classList.add('active'); renderAll(); 
+    };
 
     window.filterVentas = () => {
         let f = document.getElementById('searchVenta').value.toUpperCase();
         let items = document.getElementById('listaVentas').getElementsByClassName('col-6');
-        for (let i = 0; i < items.length; i++) {
-            items[i].style.display = items[i].innerText.toUpperCase().indexOf(f) > -1 ? "" : "none";
-        }
+        for (let i = 0; i < items.length; i++) items[i].style.display = items[i].innerText.toUpperCase().indexOf(f) > -1 ? "" : "none";
     };
 
     window.filterStock = () => {
         let f = document.getElementById('searchStock').value.toUpperCase();
         let items = document.getElementById('listaStock').getElementsByClassName('card');
-        for (let i = 0; i < items.length; i++) {
-            items[i].style.display = items[i].innerText.toUpperCase().indexOf(f) > -1 ? "" : "none";
-        }
+        for (let i = 0; i < items.length; i++) items[i].style.display = items[i].innerText.toUpperCase().indexOf(f) > -1 ? "" : "none";
     };
+
+    window.limpiarCaja = () => { remove(ref(db, 'ventas')); alert("Caja reiniciada"); bootstrap.Modal.getInstance(document.getElementById('modalCaja')).hide(); };
 
     document.getElementById('modalCaja').addEventListener('show.bs.modal', function () {
         const hoy = new Date().toLocaleDateString();
         const deHoy = ventasDia.filter(v => v.fecha === hoy);
         const efec = deHoy.filter(v => v.metodo === 'Efectivo').reduce((acc, v) => acc + v.monto, 0);
         const trans = deHoy.filter(v => v.metodo === 'Transferencia').reduce((acc, v) => acc + v.monto, 0);
-        document.getElementById('resumenCajaContent').innerHTML = `
-            <h5 class="mb-3">${hoy}</h5>
-            <div class="d-flex justify-content-between"><span>Efectivo:</span> <b>$${efec.toLocaleString()}</b></div>
-            <div class="d-flex justify-content-between"><span>Transferencia:</span> <b>$${trans.toLocaleString()}</b></div>
-            <hr>
-            <div class="h4 fw-bold">TOTAL: $${(efec+trans).toLocaleString()}</div>
-        `;
+        document.getElementById('resumenCajaContent').innerHTML = `<h5>${hoy}</h5><div class="d-flex justify-content-between"><span>Efectivo:</span><b>$${efec.toLocaleString()}</b></div><div class="d-flex justify-content-between"><span>Transferencia:</span><b>$${trans.toLocaleString()}</b></div><hr><h3>TOTAL: $${(efec+trans).toLocaleString()}</h3>`;
     });
 
 </script>

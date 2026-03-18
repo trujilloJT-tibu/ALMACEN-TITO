@@ -1,0 +1,15 @@
+{
+  "name": "Almacen Tito POS",
+  "short_name": "TitoPOS",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#2e7d32",
+  "theme_color": "#2e7d32",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3759/3759458.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
